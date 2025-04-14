@@ -1,0 +1,38 @@
+Factories	2
+Families	4
+Machines	2
+SetupType	1
+
+Number of Jobs in each Family
+2   2   1   3
+
+Jobs in each Family
+0   1
+2   3
+4
+5   6   7
+
+Total number of jobs
+8
+
+Processing times of jobs
+4	4
+2	3
+3	2
+4	4
+2	3
+3	4
+4	2
+4	5
+
+Stepup times between Families, where [f][f] represents initial setup time
+On machine	1
+4	5	2	2
+5	4	5	3
+2	2	3	4
+2	3	3	2
+On machine	2
+5	7	1	4
+4	4	3	5
+2	1	3	3
+3	4	2	4
