@@ -219,22 +219,22 @@ void ParetoOptimizer::mainNormalize(vector<Individual>& totalPopulation,
 
 
 
-void ParetoOptimizer::mainNormalize(vector<Individual>& totalPopulation,
-                                    vector<Individual>& QCCEAPopulation,
-                                    vector<Individual>& MILPParetoSet) {
+void ParetoOptimizer::mainNormalize(std::vector<Individual>& totalPopulation,
+                                    std::vector<Individual>& QCCEAPopulation,
+                                    std::vector<Individual>& MILPParetoSet) {
     // 初始化 min/max
-    int minMS = totalPopulation[0].MS;
-    float minTEC = totalPopulation[0].TEC;
-    int maxMS = totalPopulation[0].MS;
-    float maxTEC = totalPopulation[0].TEC;
+    double minMS = static_cast<double>(totalPopulation[0].MS);
+    double maxMS = static_cast<double>(totalPopulation[0].MS);
+    double minTEC = static_cast<double>(totalPopulation[0].TEC);
+    double maxTEC = static_cast<double>(totalPopulation[0].TEC);
 
-    // 统一更新 min/max
-    auto updateBounds = [&minMS, &maxMS, &minTEC, &maxTEC](const vector<Individual>& population) {
-        for (const auto& ind : population) {
-            if (ind.MS < minMS) minMS = ind.MS;
-            if (ind.MS > maxMS) maxMS = ind.MS;
-            if (ind.TEC < minTEC) minTEC = ind.TEC;
-            if (ind.TEC > maxTEC) maxTEC = ind.TEC;
+    // 更新 min/max
+    auto updateBounds = [&](const std::vector<Individual>& pop) {
+        for (const auto& ind : pop) {
+            minMS = std::min(minMS, static_cast<double>(ind.MS));
+            maxMS = std::max(maxMS, static_cast<double>(ind.MS));
+            minTEC = std::min(minTEC, static_cast<double>(ind.TEC));
+            maxTEC = std::max(maxTEC, static_cast<double>(ind.TEC));
         }
     };
 
@@ -242,20 +242,27 @@ void ParetoOptimizer::mainNormalize(vector<Individual>& totalPopulation,
     updateBounds(QCCEAPopulation);
     updateBounds(MILPParetoSet);
 
+    // 防止除 0
+    double msRange = (maxMS - minMS == 0) ? 1.0 : maxMS - minMS;
+    double tecRange = (maxTEC - minTEC == 0) ? 1e-6 : maxTEC - minTEC;
 
-    // 统一归一化
-    auto normalizePopulation = [minMS, maxMS, minTEC, maxTEC](vector<Individual>& population) {
-        for (auto& ind : population) {
-            ind.normalMS = (ind.MS - static_cast<float>(minMS)) / (maxMS - minMS);
-            ind.normalTEC = (ind.TEC - minTEC) / (maxTEC - minTEC);
+    // 归一化函数
+    auto normalize = [&](std::vector<Individual>& pop) {
+        for (auto& ind : pop) {
+            ind.normalMS = (static_cast<double>(ind.MS) - minMS) / msRange;
+            ind.normalTEC = (static_cast<double>(ind.TEC) - minTEC) / tecRange;
+
+            // 可选：clip 到 [0, 1]
+            ind.normalMS = std::max(0.0f, std::min(1.0f, ind.normalMS));
+            ind.normalTEC = std::max(0.0f, std::min(1.0f, ind.normalTEC));
         }
     };
 
-    normalizePopulation(totalPopulation);
-    normalizePopulation(QCCEAPopulation);
-    normalizePopulation(MILPParetoSet);
-
+    normalize(totalPopulation);
+    normalize(QCCEAPopulation);
+    normalize(MILPParetoSet);
 }
+
 
 
 
@@ -715,37 +722,74 @@ void ParetoOptimizer::ComputeCoverage_Str( const vector<Individual>& TotalPareto
 
 
 
-void ParetoOptimizer::ComputeCoverage_MILP( const vector<Individual>& TotalParetoPopulation, const vector<Individual>& QCCEAParetoPopulation,
-                                      const vector<Individual>& MILPParetoPopulation,
-                                      double& QCCEAC ,double& MILPC)
+//void ParetoOptimizer::ComputeCoverage_MILP( const vector<Individual>& TotalParetoPopulation, const vector<Individual>& QCCEAParetoPopulation,
+//                                      const vector<Individual>& MILPParetoPopulation,
+//                                      double& QCCEAC ,double& MILPC)
+//{
+//    int QCCEAcount = 0;
+//    for (int i = 0; i <  QCCEAParetoPopulation.size(); i++)
+//    {
+//        for (int j = 0; j < TotalParetoPopulation.size(); j++)
+//        {
+//            if (( QCCEAParetoPopulation[i].MS == TotalParetoPopulation[j].MS) && ( QCCEAParetoPopulation[i].TEC == TotalParetoPopulation[j].TEC))
+//            {
+//                QCCEAcount++;
+//            }
+//        }
+//    }
+//    QCCEAC = static_cast<float>(QCCEAcount) / TotalParetoPopulation.size();
+//
+//    int QCCEANoQcount = 0;
+//    for (int i = 0; i < MILPParetoPopulation.size(); i++)
+//    {
+//        for (int j = 0; j < TotalParetoPopulation.size(); j++)
+//        {
+//            if ((MILPParetoPopulation[i].MS == TotalParetoPopulation[j].MS) && (MILPParetoPopulation[i].TEC == TotalParetoPopulation[j].TEC))
+//            {
+//                QCCEANoQcount++;
+//            }
+//        }
+//    }
+//    MILPC = static_cast<float>(QCCEANoQcount) / TotalParetoPopulation.size();
+//
+//}
+#include <set>
+#include <tuple>
+
+struct IndividualCompare {
+    bool operator()(const Individual& a, const Individual& b) const {
+        return std::tie(a.MS, a.TEC) < std::tie(b.MS, b.TEC);
+    }
+};
+
+void ParetoOptimizer::ComputeCoverage_MILP(
+        const vector<Individual>& TotalParetoPopulation,
+        const vector<Individual>& QCCEAParetoPopulation,
+        const vector<Individual>& MILPParetoPopulation,
+        double& QCCEAC, double& MILPC)
 {
+    // 转换为 set 去重
+    std::set<Individual, IndividualCompare> totalSet(
+            TotalParetoPopulation.begin(), TotalParetoPopulation.end());
+    std::set<Individual, IndividualCompare> qcceaSet(
+            QCCEAParetoPopulation.begin(), QCCEAParetoPopulation.end());
+    std::set<Individual, IndividualCompare> milpSet(
+            MILPParetoPopulation.begin(), MILPParetoPopulation.end());
+
+    // 计算覆盖率
     int QCCEAcount = 0;
-    for (int i = 0; i <  QCCEAParetoPopulation.size(); i++)
-    {
-        for (int j = 0; j < TotalParetoPopulation.size(); j++)
-        {
-            if (( QCCEAParetoPopulation[i].MS == TotalParetoPopulation[j].MS) && ( QCCEAParetoPopulation[i].TEC == TotalParetoPopulation[j].TEC))
-            {
-                QCCEAcount++;
-            }
-        }
+    for (const auto& ind : qcceaSet) {
+        if (totalSet.count(ind) > 0) QCCEAcount++;
     }
-    QCCEAC = static_cast<float>(QCCEAcount) / TotalParetoPopulation.size();
+    QCCEAC = static_cast<double>(QCCEAcount) / totalSet.size();
 
-    int QCCEANoQcount = 0;
-    for (int i = 0; i < MILPParetoPopulation.size(); i++)
-    {
-        for (int j = 0; j < TotalParetoPopulation.size(); j++)
-        {
-            if ((MILPParetoPopulation[i].MS == TotalParetoPopulation[j].MS) && (MILPParetoPopulation[i].TEC == TotalParetoPopulation[j].TEC))
-            {
-                QCCEANoQcount++;
-            }
-        }
+    int MILPcount = 0;
+    for (const auto& ind : milpSet) {
+        if (totalSet.count(ind) > 0) MILPcount++;
     }
-    MILPC = static_cast<float>(QCCEANoQcount) / TotalParetoPopulation.size();
-
+    MILPC = static_cast<double>(MILPcount) / totalSet.size();
 }
+
 
 // 比较函数，用于排序
 bool  ParetoOptimizer::compareSolutions(const Individual& sol1, const Individual& sol2) {
@@ -1050,6 +1094,7 @@ void ParetoOptimizer::ComputeIGD_Str(const vector<Individual>& TotalParetoPopula
     }
     QCCEANoRapidIGD /= TotalParetoPopulation.size();
 }
+
 
 void ParetoOptimizer::ComputeIGD_MILP( const vector<Individual>& TotalParetoPopulation,
                                  const vector<Individual>& QCCEAParetoPopulation,

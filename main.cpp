@@ -47,11 +47,11 @@ int main()
 
     vector<vector<Individual>> QCCEANoQFinalAfterRepParetoSet(405);
 //    QCCEANoQ qcceaNoQ;
-//    qcceaNoQ.RunEvolution(20, QCCEAFinalAfterRepParetoSet, 10, 4);
+//    qcceaNoQ.RunEvolution(20, QCCEANoQFinalAfterRepParetoSet, 10, 4);
 
     vector<vector<Individual>> QCCEANoRapidFinalAfterRepParetoSet(405);
 //    QCCEANoRapid qcceaNoRapid;
-//    qcceaNoRapid.RunEvolution(20, QCCEAFinalAfterRepParetoSet, 10, 4);
+//    qcceaNoRapid.RunEvolution(20, QCCEAANoRapidFinalAfterRepParetoSet, 10, 4);
 
 //      Compare();
 //    AdjustPerum();
@@ -392,12 +392,12 @@ void CompareMILP(){
     // 读取文件中的QCCEAPareto 解集
     std::vector<std::vector<Individual>> QCCEAparetoSets(405);
     ParetoReader QCCEAreader;
-    QCCEAreader.readParetoSetFromFile("../MILPResult/CCEAPM.txt", QCCEAparetoSets);
+    QCCEAreader.readParetoSetFromFile("../MILPResult/QCCEA_20_experiment.txt", QCCEAparetoSets);
 
     // 读取文件中的 MILPPareto 解集
     std::vector<std::vector<Individual>> MILPparetoSets(405);
     ParetoReader MILPreader;
-    MILPreader.readParetoSetFromFile("../MILPResult/CCEAPMMILP.txt", MILPparetoSets);
+    MILPreader.readParetoSetFromFile("../MILPResult/MILP_experiment.txt", MILPparetoSets);
 
 
     ofstream ofileC;

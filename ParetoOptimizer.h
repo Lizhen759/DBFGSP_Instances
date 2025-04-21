@@ -122,6 +122,7 @@ public:
 
     void ComputeHV_MILP(const vector<Individual> &TotalParetoPopulation, vector<Individual> &QCCEAParetoPopulation,
                    vector<Individual> &MILPParetoPopulation, double &QCCEAHV, double &MILPHV);
+
 };
 
 

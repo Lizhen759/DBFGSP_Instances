@@ -840,24 +840,7 @@ void TSCCEA::Evolution()//randomly setup the mapping relationship, compare with 
         long ElapsedTime = CurTime - m_InitTime;
         if (ElapsedTime >= m_TimeLimit) break;
     }
-    //检查
-    //for (int PS = 0; PS < TSCCEAPopulation.size(); PS++)
-    //{
-    //	//m_SpeedMatrix = m_ArchiveSpeedVector[PS];
-    //	m_SpeedMatrix = TSCCEAPopulation[PS].m_SpeedVector;
-    //	//得到真正的处理时间 及单位加工能耗
-    //	for (int j = 0; j < m_Jobs; j++)
-    //	{
-    //		for (int i = 0; i < m_Machines; i++)
-    //		{
-    //			m_TureJobOpertime[j][i] = static_cast<int>(m_JobOperPTime[j][i] / m_Speed[m_SpeedMatrix[j][i]]);
-    //			UnitPEC[j][i] = 4 * m_Speed[m_SpeedMatrix[j][i]] * m_Speed[m_SpeedMatrix[j][i]];
-    //		}
-    //	}
-    //
-    //	CheckSol(TSCCEAPopulation[PS].m_FacFamSeqArray, TSCCEAPopulation[PS].m_JobSeqInFamArray, TSCCEAPopulation[PS].MS);
-    //	CheckSolTEC(TSCCEAPopulation[PS].m_FacFamSeqArray, TSCCEAPopulation[PS].m_JobSeqInFamArray, TSCCEAPopulation[PS].TEC);
-    //}
+
 }
 void TSCCEA::RunEvolution(int CPUFactor, int Rep, vector<vector<Individual>>& TSCCEAFinalAfterRepParetoSet)
 {
